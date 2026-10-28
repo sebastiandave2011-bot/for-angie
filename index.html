@@ -1,0 +1,1088 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>For Angie 🩵</title>
+
+  <!-- ==========================================================================
+       TIPOGRAFÍAS DE GOOGLE FONTS
+       'Dancing Script' para títulos románticos en cursiva
+       'Poppins' para textos generales legibles y modernos
+       ========================================================================== -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600;700&family=Poppins:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&display=swap"
+    rel="stylesheet"
+  />
+
+  <!-- ==========================================================================
+       LEAFLET.JS CSS (POR CDN) PARA EL MAPA INTERACTIVO CON PINES DE CORAZÓN
+       ========================================================================== -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    crossorigin=""
+  />
+
+  <!-- Hoja de estilos principal -->
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <!-- ==========================================================================
+       1. PANTALLA DE BLOQUEO / GATEWAY (PUERTA DE ENTRADA)
+       El usuario debe tocar el corazón varias veces para llenarlo y desbloquear
+       la página principal. Carga en Inglés por defecto con gama Azul Claro (#4FC3F7).
+       ========================================================================== -->
+  <div id="gateway-screen" class="gateway-overlay" aria-label="Welcome screen">
+    <div class="gateway-content">
+      <p class="gateway-badge" data-i18n="gateway_badge">14 Months of Love</p>
+      <h1 class="gateway-title" data-i18n="gateway_title">
+        Hello, Angie
+        <svg class="sky-heart" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+      </h1>
+      <p class="gateway-instruction" data-i18n="gateway_instruction">
+        Tap the heart several times to fill it with love and unlock your surprise
+      </p>
+
+      <!-- Botón del Corazón Interactivo en tonos Azul Claro (#29B6F6 / #4FC3F7 / #E1F5FE) -->
+      <div class="heart-interactive-wrapper">
+        <button
+          id="gateway-heart-btn"
+          class="gateway-heart-btn"
+          type="button"
+          aria-label="Tap the heart to unlock"
+        >
+          <svg class="heart-svg" viewBox="0 0 200 185" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <!-- Gradiente en tonos azul cielo y pastel para el relleno del corazón -->
+              <linearGradient id="heartFillGradient" x1="0%" y1="100%" x2="0%" y2="0%">
+                <stop offset="0%" stop-color="#29B6F6" />
+                <stop id="heart-gradient-stop-fill" offset="0%" stop-color="#4FC3F7" />
+                <stop id="heart-gradient-stop-empty" offset="0%" stop-color="#E1F5FE" />
+                <stop offset="100%" stop-color="#E1F5FE" />
+              </linearGradient>
+            </defs>
+            <path
+              class="heart-path"
+              d="M100 172 C100 172 16 116 16 58 C16 28 40 8 68 8 C85 8 95 17 100 28 C105 17 115 8 132 8 C160 8 184 28 184 58 C184 116 100 172 100 172 Z"
+              fill="url(#heartFillGradient)"
+              stroke="#29B6F6"
+              stroke-width="5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+          <!-- Contenedor de partículas de corazones flotantes al hacer clic -->
+          <div id="heart-particles" class="heart-particles"></div>
+        </button>
+      </div>
+
+      <!-- Barra de progreso y contador de toques -->
+      <div class="gateway-progress-container">
+        <div class="gateway-progress-bar">
+          <div id="gateway-progress-fill" class="gateway-progress-fill"></div>
+        </div>
+        <span id="gateway-progress-text" class="gateway-progress-text">0%</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================================================
+       BARRA SUPERIOR FIJA (HEADER & BOTÓN DE IDIOMA EN / ES)
+       El corazón entre la "A" y la "S" usa SVG vectorial en #4FC3F7
+       ========================================================================== -->
+  <header class="top-navbar">
+    <div class="navbar-inner">
+      <span class="navbar-brand">
+        A
+        <svg class="sky-heart" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+        S
+      </span>
+
+      <button
+        id="lang-toggle-btn"
+        class="lang-toggle-btn"
+        type="button"
+        aria-label="Switch language / Cambiar idioma"
+      >
+        <span class="lang-icon">🌐</span>
+        <span id="lang-toggle-text">ES / Español</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ==========================================================================
+       CONTENIDO PRINCIPAL DE LA SPA
+       ========================================================================== -->
+  <main id="main-content" class="main-content">
+
+    <!-- ========================================================================
+         2. BANNER DE INICIO (HERO SECTION CON VIDEO DE FONDO EN LOOP Y FADE INFERIOR)
+         ======================================================================== -->
+    <section id="hero-section" class="section hero-section">
+      <!-- 🔧 VIDEO DE FONDO (HERO VIDEO) -->
+      <video
+        class="hero-bg-video"
+        autoplay
+        loop
+        muted
+        playsinline
+        src="hero/hero-background.mov"
+      ></video>
+
+      <!-- Superposición (overlay) semi-transparente azulada/oscura para garantizar la legibilidad -->
+      <div class="hero-video-overlay" aria-hidden="true"></div>
+
+      <div class="container hero-container">
+        <!-- Marco para la foto central de ustedes -->
+        <div class="hero-photo-frame">
+          <img
+            src="images/hero-image.webp"
+            alt="Angie and Sebastian"
+            class="hero-photo"
+          />
+          <div class="photo-badge" data-i18n="hero_badge">
+            14 Months
+            <svg class="sky-heart" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+          </div>
+        </div>
+
+        <!-- Textos centrados y estéticos en el orden exacto solicitado -->
+        <div class="hero-texts">
+          <h1 class="cursive-title hero-main-title" data-i18n="hero_title">For Angie</h1>
+          <h2 class="hero-subtitle-1" data-i18n="hero_sub1">Angie &amp; Sebastian</h2>
+          <p class="hero-subtitle-2" data-i18n="hero_sub2">From: Sebastian</p>
+          <p class="hero-subtitle-3" data-i18n="hero_sub3">November 11, 2026</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================================
+         3. NUESTRA CANCIÓN (YOUTUBE EMBED)
+         ======================================================================== -->
+    <section id="our-song-section" class="section song-section">
+      <div class="container">
+        <div class="section-header">
+          <span class="section-tag" data-i18n="song_tag">A special cover recorded with all my heart</span>
+          <h2 class="cursive-title section-title" data-i18n="song_title">Our Song</h2>
+        </div>
+
+        <div class="video-card">
+          <div class="video-responsive-wrapper">
+            <!-- Iframe exacto proporcionado para el cover de YouTube -->
+            <iframe
+              width="560"
+              height="315"
+              src="https://www.youtube.com/embed/Cl94SKWtsrg"
+              title="YouTube video player"
+              frameborder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowfullscreen
+            ></iframe>
+          </div>
+          <p class="video-caption" data-i18n="song_caption">
+            Every single note of this song carries everything I feel for you 🎸
+            <svg class="sky-heart" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================================
+         4. NUESTRAS CANCIONES (REPRODUCCIÓN DIRECTA + BOTÓN REPRODUCIR TODO)
+         ======================================================================== -->
+    <section id="playlist-section" class="section playlist-section">
+      <div class="container">
+        <div class="section-header">
+          <span class="section-tag" data-i18n="playlist_tag">The soundtrack of our love story</span>
+          <h2 class="cursive-title section-title" data-i18n="playlist_title">Our Songs</h2>
+        </div>
+
+        <div class="playlist-card">
+          <!-- Cabecera de nuestra Playlist con Botón "Play All / Reproducir Todo" -->
+          <div class="playlist-header">
+            <div class="playlist-cover">
+              <span class="playlist-cover-icon">🎵</span>
+            </div>
+            <div class="playlist-meta">
+              <span class="playlist-type" data-i18n="playlist_badge">OUR SPECIAL PLAYLIST</span>
+              <h3 class="playlist-name" data-i18n="playlist_name">Angie &amp; Sebastian: 14 Months</h3>
+              <p class="playlist-desc" data-i18n="playlist_desc">
+                10 songs that remind me of you in every chord.
+              </p>
+            </div>
+
+            <!-- Botón Global para Reproducir / Pausar / Reanudar toda la lista en secuencia -->
+            <button
+              id="play-all-btn"
+              class="play-all-btn"
+              type="button"
+              aria-label="Play all songs in sequence"
+            >
+              <span id="play-all-icon" class="play-all-icon">▶</span>
+              <span id="play-all-label" data-i18n="play_all_play">Play All</span>
+            </button>
+          </div>
+
+          <!-- ==================================================================
+               🔧 LISTA DE LAS 10 CANCIONES CON REPRODUCCIÓN DIRECTA (<audio>)
+               Se enlazan automáticamente desde la carpeta ./audio/
+               ================================================================== -->
+          <ul class="song-list">
+            <!-- Canción 1 -->
+            <li class="song-item">
+              <span class="song-number">01</span>
+              <div class="song-info">
+                <span class="song-name">Save Me</span>
+                <span class="song-artist">Edguy</span>
+              </div>
+              <audio class="song-audio" preload="none" src="./audio/save-me.mp3"></audio>
+              <button
+                type="button"
+                class="song-play-btn"
+                aria-label="Play Save Me by Edguy"
+              >▶</button>
+            </li>
+
+            <!-- Canción 2 -->
+            <li class="song-item">
+              <span class="song-number">02</span>
+              <div class="song-info">
+                <span class="song-name">I Want to Know What Love Is</span>
+                <span class="song-artist">Foreigner</span>
+              </div>
+              <audio class="song-audio" preload="none" src="./audio/i-want-to-know-what-love-is.mp3"></audio>
+              <button
+                type="button"
+                class="song-play-btn"
+                aria-label="Play I Want to Know What Love Is by Foreigner"
+              >▶</button>
+            </li>
+
+            <!-- Canción 3 -->
+            <li class="song-item">
+              <span class="song-number">03</span>
+              <div class="song-info">
+                <span class="song-name">Follow Me</span>
+                <span class="song-artist">Angel Dust</span>
+              </div>
+              <audio class="song-audio" preload="none" src="./audio/follow-me.mp3"></audio>
+              <button
+                type="button"
+                class="song-play-btn"
+                aria-label="Play Follow Me by Angel Dust"
+              >▶</button>
+            </li>
+
+            <!-- Canción 4 -->
+            <li class="song-item">
+              <span class="song-number">04</span>
+              <div class="song-info">
+                <span class="song-name">Si tú no estás aquí</span>
+                <span class="song-artist">Ángeles del Infierno</span>
+              </div>
+              <audio class="song-audio" preload="none" src="./audio/si-tu-no-estas-aqui.mp3"></audio>
+              <button
+                type="button"
+                class="song-play-btn"
+                aria-label="Play Si tú no estás aquí by Ángeles del Infierno"
+              >▶</button>
+            </li>
+
+            <!-- Canción 5 -->
+            <li class="song-item">
+              <span class="song-number">05</span>
+              <div class="song-info">
+                <span class="song-name">Is This Love</span>
+                <span class="song-artist">Whitesnake</span>
+              </div>
+              <audio class="song-audio" preload="none" src="./audio/is-this-love.mp3"></audio>
+              <button
+                type="button"
+                class="song-play-btn"
+                aria-label="Play Is This Love by Whitesnake"
+              >▶</button>
+            </li>
+
+            <!-- Canción 6 -->
+            <li class="song-item">
+              <span class="song-number">06</span>
+              <div class="song-info">
+                <span class="song-name">I Remember You</span>
+                <span class="song-artist">Skid Row</span>
+              </div>
+              <audio class="song-audio" preload="none" src="./audio/i-remember-you.mp3"></audio>
+              <button
+                type="button"
+                class="song-play-btn"
+                aria-label="Play I Remember You by Skid Row"
+              >▶</button>
+            </li>
+
+            <!-- Canción 7 -->
+            <li class="song-item">
+              <span class="song-number">07</span>
+              <div class="song-info">
+                <span class="song-name">Siempre estás allí</span>
+                <span class="song-artist">Barón Rojo</span>
+              </div>
+              <audio class="song-audio" preload="none" src="./audio/siempre-estas-alli.mp3"></audio>
+              <button
+                type="button"
+                class="song-play-btn"
+                aria-label="Play Siempre estás allí by Barón Rojo"
+              >▶</button>
+            </li>
+
+            <!-- Canción 8 -->
+            <li class="song-item">
+              <span class="song-number">08</span>
+              <div class="song-info">
+                <span class="song-name">I'll Be There for You</span>
+                <span class="song-artist">Bon Jovi</span>
+              </div>
+              <audio class="song-audio" preload="none" src="./audio/ill-be-there-for-you.mp3"></audio>
+              <button
+                type="button"
+                class="song-play-btn"
+                aria-label="Play I'll Be There for You by Bon Jovi"
+              >▶</button>
+            </li>
+
+            <!-- Canción 9 -->
+            <li class="song-item">
+              <span class="song-number">09</span>
+              <div class="song-info">
+                <span class="song-name">Forever</span>
+                <span class="song-artist">Edguy</span>
+              </div>
+              <audio class="song-audio" preload="none" src="./audio/forever.mp3"></audio>
+              <button
+                type="button"
+                class="song-play-btn"
+                aria-label="Play Forever by Edguy"
+              >▶</button>
+            </li>
+
+            <!-- Canción 10 -->
+            <li class="song-item">
+              <span class="song-number">10</span>
+              <div class="song-info">
+                <span class="song-name">Amor del Bueno</span>
+                <span class="song-artist">Reyli Barba</span>
+              </div>
+              <audio class="song-audio" preload="none" src="./audio/amor-del-bueno.mp3"></audio>
+              <button
+                type="button"
+                class="song-play-btn"
+                aria-label="Play Amor del Bueno by Reyli Barba"
+              >▶</button>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================================
+         5. GALERÍA "MOMENTOS QUE NO SE BORRAN" (CARRUSEL INTERACTIVO DE 10 SLIDES)
+         Enlazado a las imágenes locales en ./images/
+         ======================================================================== -->
+    <section id="gallery-section" class="section gallery-section">
+      <div class="container">
+        <div class="section-header">
+          <span class="section-tag" data-i18n="gallery_tag">Our favorite photographs</span>
+          <h2 class="cursive-title section-title" data-i18n="gallery_title">Unforgettable Moments</h2>
+          <p class="section-subtitle" data-i18n="gallery_hint">
+            Swipe in either direction to browse our photos. Tap any image to pause the slideshow.
+          </p>
+        </div>
+
+        <div class="carousel-wrapper">
+          <!-- Indicador de estado del carrusel (Auto / Pausado) -->
+          <div class="carousel-status-bar">
+            <span id="carousel-status-badge" class="carousel-status-badge" data-i18n="carousel_playing">
+              ✨ Autoplay active
+            </span>
+          </div>
+
+          <!-- Pista deslizable del carrusel -->
+          <div id="carousel-viewport" class="carousel-viewport">
+            <div id="carousel-track" class="carousel-track">
+              <!-- Slide 1 -->
+              <div class="carousel-slide">
+                <img
+                  src="./images/memory-1.webp"
+                  data-fallback="./images/1.jpg"
+                  alt="Memory 1"
+                  draggable="false"
+                />
+                <div class="slide-caption" data-i18n="slide_1">Memory #1 • Your smile brightens my days</div>
+              </div>
+
+              <!-- Slide 2 -->
+              <div class="carousel-slide">
+                <img
+                  src="./images/memory-2.webp"
+                  data-fallback="./images/2.jpg"
+                  alt="Memory 2"
+                  draggable="false"
+                />
+                <div class="slide-caption" data-i18n="slide_2">Memory #2 • Walking hand in hand</div>
+              </div>
+
+              <!-- Slide 3 -->
+              <div class="carousel-slide">
+                <img
+                  src="./images/memory-3.webp"
+                  data-fallback="./images/3.jpg"
+                  alt="Memory 3"
+                  draggable="false"
+                />
+                <div class="slide-caption" data-i18n="slide_3">Memory #3 • Partners in every adventure</div>
+              </div>
+
+              <!-- Slide 4 -->
+              <div class="carousel-slide">
+                <img
+                  src="./images/memory-4.webp"
+                  data-fallback="./images/4.jpg"
+                  alt="Memory 4"
+                  draggable="false"
+                />
+                <div class="slide-caption" data-i18n="slide_4">Memory #4 • Unforgettable sunsets with you</div>
+              </div>
+
+              <!-- Slide 5 -->
+              <div class="carousel-slide">
+                <img
+                  src="./images/memory-5.webp"
+                  data-fallback="./images/5.jpg"
+                  alt="Memory 5"
+                  draggable="false"
+                />
+                <div class="slide-caption" data-i18n="slide_5">Memory #5 • Hugs that stop time</div>
+              </div>
+
+              <!-- Slide 6 -->
+              <div class="carousel-slide">
+                <img
+                  src="./images/memory-6.webp"
+                  data-fallback="./images/6.jpg"
+                  alt="Memory 6"
+                  draggable="false"
+                />
+                <div class="slide-caption" data-i18n="slide_6">Memory #6 • Discovering new landscapes together</div>
+              </div>
+
+              <!-- Slide 7 -->
+              <div class="carousel-slide">
+                <img
+                  src="./images/memory-7.webp"
+                  data-fallback="./images/7.jpg"
+                  alt="Memory 7"
+                  draggable="false"
+                />
+                <div class="slide-caption" data-i18n="slide_7">Memory #7 • Every detail by your side is magical</div>
+              </div>
+
+              <!-- Slide 8 -->
+              <div class="carousel-slide">
+                <img
+                  src="./images/memory-8.webp"
+                  data-fallback="./images/8.jpg"
+                  alt="Memory 8"
+                  draggable="false"
+                />
+                <div class="slide-caption" data-i18n="slide_8">Memory #8 • Laughter I keep in my soul</div>
+              </div>
+
+              <!-- Slide 9 -->
+              <div class="carousel-slide">
+                <img
+                  src="./images/memory-9.webp"
+                  data-fallback="./images/9.jpg"
+                  alt="Memory 9"
+                  draggable="false"
+                />
+                <div class="slide-caption" data-i18n="slide_9">Memory #9 • My favorite place is always you</div>
+              </div>
+
+              <!-- Slide 10 -->
+              <div class="carousel-slide">
+                <img
+                  src="./images/memory-10.webp"
+                  data-fallback="./images/10.jpg"
+                  alt="Memory 10"
+                  draggable="false"
+                />
+                <div class="slide-caption" data-i18n="slide_10">Memory #10 • To infinite more moments together</div>
+              </div>
+            </div>
+
+            <!-- Botones de navegación lateral -->
+            <button
+              id="carousel-prev"
+              class="carousel-nav-btn prev"
+              type="button"
+              aria-label="Previous photo"
+            >❮</button>
+            <button
+              id="carousel-next"
+              class="carousel-nav-btn next"
+              type="button"
+              aria-label="Next photo"
+            >❯</button>
+          </div>
+
+          <!-- Puntos indicadores (dots) generados dinámicamente por JS -->
+          <div id="carousel-dots" class="carousel-dots"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================================
+         6. CARTA DE LOS 14 MESES ("HELLO MY LOVE" / "HOLA MI AMOR")
+         Corazones en sello de 14 meses y en la firma de Sebastian en #4FC3F7
+         ======================================================================== -->
+    <section id="letter-section" class="section letter-section">
+      <div class="container">
+        <article class="love-letter-card">
+          <div class="letter-stamp" data-i18n="letter_stamp">
+            <svg class="sky-heart" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+            14 Months
+          </div>
+          <h2 class="cursive-title letter-title" data-i18n="letter_title">Hello my love</h2>
+
+          <div class="letter-body">
+            <p data-i18n="letter_p1">
+              Today we celebrate 14 months since that unforgettable <strong>September 11, 2025</strong>, the day our story began and my life changed forever in the most beautiful way I could ever imagine.
+            </p>
+            <p data-i18n="letter_p2">
+              Looking back and remembering every laugh, every hug, every trip to see waterfalls, our endless talks, and even the quiet moments by your side fills my heart with immense happiness. With you I learned that true love feels like peace, like home, and like the most exciting adventure of all.
+            </p>
+            <p data-i18n="letter_p3">
+              Thank you for your tenderness, for your unique way of loving me, for supporting me in every step, and for making every day with you worthwhile. No matter where we are, if I am holding your hand I know I am in the exact right place.
+            </p>
+            <p data-i18n="letter_p4">
+              Happy 14 months, my beautiful Angie. This is just one more chapter of the whole lifetime I want to keep writing with you. I love you with all my heart.
+            </p>
+          </div>
+
+          <div class="letter-signature">
+            <p data-i18n="letter_sign_label">With all my love,</p>
+            <p class="cursive-title signature-name">
+              Sebastian
+              <svg class="sky-heart" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+            </p>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- ========================================================================
+         7. RECUERDOS Y "NUESTRA LÍNEA DE TIEMPO" + CONTADOR DINÁMICO
+         ======================================================================== -->
+    <section id="timeline-section" class="section timeline-section">
+      <div class="container">
+        <div class="section-header">
+          <span class="section-tag" data-i18n="timeline_tag">Building our love step by step</span>
+          <h2 class="cursive-title section-title" data-i18n="timeline_title">Our Timeline</h2>
+        </div>
+
+        <!-- Tarjeta Central: Contador Dinámico en Tiempo Real -->
+        <div class="days-counter-card">
+          <p class="counter-label" data-i18n="counter_title">
+            Days together since September 11, 2025
+          </p>
+          <div class="counter-main-number">
+            <span id="days-count-value">0</span>
+            <span class="counter-unit" data-i18n="counter_days_word">days</span>
+          </div>
+          <!-- Detalle en tiempo real (horas, minutos, segundos) -->
+          <div class="counter-live-breakdown">
+            <div class="live-chip">
+              <strong id="hours-count-value">00</strong>
+              <span data-i18n="counter_hours">Hours</span>
+            </div>
+            <div class="live-chip">
+              <strong id="minutes-count-value">00</strong>
+              <span data-i18n="counter_minutes">Minutes</span>
+            </div>
+            <div class="live-chip">
+              <strong id="seconds-count-value">00</strong>
+              <span data-i18n="counter_seconds">Seconds</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Contenedor Vertical de la Línea de Tiempo -->
+        <div class="timeline-container">
+
+          <!-- Cápsula / Evento 1: Primera cita -->
+          <div class="timeline-capsule">
+            <div class="timeline-thumb-wrapper">
+              <img
+                src="./images/fist date.webp"
+                data-fallback="./images/first_date.jpg"
+                alt="Our first date"
+                class="timeline-thumb"
+              />
+            </div>
+            <div class="timeline-capsule-content">
+              <span class="timeline-step-badge" data-i18n="event_1_badge">Milestone #1 • Sep 11, 2025</span>
+              <h3 class="timeline-event-title" data-i18n="event_1_title">
+                Our first date on September 11, 2025
+              </h3>
+              <p class="timeline-event-desc" data-i18n="event_1_desc">
+                The official start of our adventure together; the butterflies, the smiles, and knowing something magical had just begun.
+              </p>
+            </div>
+          </div>
+
+          <!-- Cápsula / Evento 2: Primera cascada -->
+          <div class="timeline-capsule">
+            <div class="timeline-thumb-wrapper">
+              <img
+                src="./images/first waterfall.webp"
+                data-fallback="./images/first_waterfall.jpg"
+                alt="Our first time at a waterfall"
+                class="timeline-thumb"
+              />
+            </div>
+            <div class="timeline-capsule-content">
+              <span class="timeline-step-badge" data-i18n="event_2_badge">Milestone #2 • Nature &amp; Love</span>
+              <h3 class="timeline-event-title" data-i18n="event_2_title">
+                Our first time at a waterfall
+              </h3>
+              <p class="timeline-event-desc" data-i18n="event_2_desc">
+                Listening to the sound of the water while holding you close was one of the purest and most unforgettable moments of our story.
+              </p>
+            </div>
+          </div>
+
+          <!-- Cápsula / Evento 3: Primer detalle -->
+          <div class="timeline-capsule">
+            <div class="timeline-thumb-wrapper">
+              <img
+                src="./images/first-gift.webp"
+                data-fallback="./images/first_gift.jpg"
+                alt="Our first gift"
+                class="timeline-thumb"
+              />
+            </div>
+            <div class="timeline-capsule-content">
+              <span class="timeline-step-badge" data-i18n="event_3_badge">Milestone #3 • With all my heart</span>
+              <h3 class="timeline-event-title" data-i18n="event_3_title">
+                Our first gift
+              </h3>
+              <p class="timeline-event-desc" data-i18n="event_3_desc">
+                A gesture full of excitement to remind you how much you mean to me and how much I love making you smile.
+              </p>
+            </div>
+          </div>
+
+          <!-- ==================================================================
+               🔧 PLANTILLA PARA CLONAR Y AGREGAR MÁS CÁPSULAS DESPUÉS:
+               Para añadir un nuevo evento a la línea de tiempo, simplemente copia
+               el bloque <div class="timeline-capsule">...</div> de abajo, pégalo
+               fuera de este comentario y cambia la imagen y los textos.
+               ==================================================================
+          <div class="timeline-capsule">
+            <div class="timeline-thumb-wrapper">
+              <img
+                src="RUTA_DE_TU_FOTO_AQUI.jpg"
+                alt="Descripción de la foto"
+                class="timeline-thumb"
+              />
+            </div>
+            <div class="timeline-capsule-content">
+              <span class="timeline-step-badge">Milestone #4 • Fecha o etiqueta</span>
+              <h3 class="timeline-event-title">
+                Título de tu nuevo recuerdo aquí
+              </h3>
+              <p class="timeline-event-desc">
+                Escribe aquí una breve descripción romántica de este momento especial.
+              </p>
+            </div>
+          </div>
+          =================================================================== -->
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================================
+         8. MENSAJE DE VOZ
+         ======================================================================== -->
+    <section id="voice-section" class="section voice-section">
+      <div class="container">
+        <div class="voice-card">
+          <div class="voice-icon-circle" aria-hidden="true">
+            <!-- Ícono SVG de micrófono romántico -->
+            <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+              <line x1="12" y1="19" x2="12" y2="23"></line>
+              <line x1="8" y1="23" x2="16" y2="23"></line>
+            </svg>
+          </div>
+
+          <h2 class="cursive-title voice-title" data-i18n="voice_title">Voice Message</h2>
+          <p class="voice-subtitle" data-i18n="voice_subtitle">
+            Close your eyes for a moment, press play, and listen to what I have to tell you
+            <svg class="sky-heart" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+          </p>
+
+          <!-- Ondas decorativas de audio -->
+          <div class="voice-waveform" aria-hidden="true">
+            <span></span><span></span><span></span><span></span><span></span>
+            <span></span><span></span><span></span><span></span><span></span>
+            <span></span><span></span><span></span><span></span><span></span>
+          </div>
+
+          <div class="audio-player-wrapper">
+            <audio id="voice-audio" controls preload="metadata" src="./audio/mensaje_de_voz.mp3">
+              Your browser does not support the audio element.
+            </audio>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================================
+         9. NUESTRO MAPA DE HISTORIA ("OUR PLACES" / "NUESTROS LUGARES")
+         Implementado con Leaflet.js, 9 lugares especiales y Miniatura Flotante Dinámica
+         ======================================================================== -->
+    <section id="places-section" class="section places-section">
+      <div class="container">
+        <div class="section-header">
+          <span class="section-tag" data-i18n="places_tag">Coordinates where we were endlessly happy</span>
+          <h2 class="cursive-title section-title" data-i18n="places_title">Our Places</h2>
+          <p class="section-subtitle" data-i18n="places_hint">
+            Click on each heart
+            <svg class="sky-heart" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+            on the map (or on the cards below) to see our special places.
+          </p>
+        </div>
+
+        <!-- Contenedor del Mapa Interactivo Leaflet.js + Miniatura Circular Flotante -->
+        <div class="map-Showcase-card">
+          <div class="map-box-relative">
+            <div id="places-leaflet-map" class="map-responsive-wrapper leaflet-map-box" aria-label="Interactive map of our places"></div>
+
+            <!-- Miniatura Circular Dinámica en la esquina inferior derecha del mapa -->
+            <div id="map-place-thumb-box" class="map-place-thumb-box" title="Our photo at this place">
+              <img
+                id="map-place-thumb-img"
+                src="./images/la-calera.webp"
+                data-fallback="./images/la_calera.jpg"
+                alt="Mirador de La Calera"
+                class="map-place-thumb-img"
+              />
+            </div>
+          </div>
+        </div>
+
+        <!-- Cuadrícula Flexbox de tarjetas para los 9 lugares especiales -->
+        <div class="places-grid">
+          <!-- Lugar 1: Mirador de La Calera -->
+          <div class="place-card" data-place-index="0">
+            <div class="place-pin-icon">
+              <svg class="sky-heart" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+            </div>
+            <h3 class="place-name" data-i18n="place_1_name">Mirador de La Calera</h3>
+            <p class="place-desc" data-i18n="place_1_desc">
+              Where the city lights sparkled below us, yet my eyes could only look at you while we held each other against the cold.
+            </p>
+          </div>
+
+          <!-- Lugar 2: Restaurante Sarku (Centro Mayor) -->
+          <div class="place-card" data-place-index="1">
+            <div class="place-pin-icon">
+              <svg class="sky-heart" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+            </div>
+            <h3 class="place-name" data-i18n="place_2_name">Sarku Restaurant</h3>
+            <p class="place-desc" data-i18n="place_2_desc">
+              Special flavors at Centro Mayor, shared smiles across the table, and that sweet feeling that any meal with you becomes the perfect date.
+            </p>
+          </div>
+
+          <!-- Lugar 3: Restaurante Poke Bowls -->
+          <div class="place-card" data-place-index="2">
+            <div class="place-pin-icon">
+              <svg class="sky-heart" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+            </div>
+            <h3 class="place-name" data-i18n="place_3_name">Poke Bowls Restaurant</h3>
+            <p class="place-desc" data-i18n="place_3_desc">
+              Our delicious spot in Bogotá to share cravings, talk about our day, and enjoy the joy of simple things together.
+            </p>
+          </div>
+
+          <!-- Lugar 4: Salto de las Monjas -->
+          <div class="place-card" data-place-index="3">
+            <div class="place-pin-icon">
+              <svg class="sky-heart" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+            </div>
+            <h3 class="place-name" data-i18n="place_4_name">Salto de las Monjas</h3>
+            <p class="place-desc" data-i18n="place_4_desc">
+              Among green trails and the magical rush of falling water, we discovered how wonderful it is to explore the world hand in hand.
+            </p>
+          </div>
+
+          <!-- Lugar 5: Cascada del Escobo -->
+          <div class="place-card" data-place-index="4">
+            <div class="place-pin-icon">
+              <svg class="sky-heart" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+            </div>
+            <h3 class="place-name" data-i18n="place_5_name">Cascada del Escobo</h3>
+            <p class="place-desc" data-i18n="place_5_desc">
+              A hidden paradise in nature that keeps the echo of our laughter and the unforgettable memory of our adventure together.
+            </p>
+          </div>
+
+          <!-- Lugar 6: Monserrate -->
+          <div class="place-card" data-place-index="5">
+            <div class="place-pin-icon">
+              <svg class="sky-heart" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+            </div>
+            <h3 class="place-name" data-i18n="place_6_name">Monserrate</h3>
+            <p class="place-desc" data-i18n="place_6_desc">
+              Touching the sky of Bogotá together, enjoying the breeze, the view from the top, and the joy of sharing every step with you.
+            </p>
+          </div>
+
+          <!-- Lugar 7: UNAD -->
+          <div class="place-card" data-place-index="6">
+            <div class="place-pin-icon">
+              <svg class="sky-heart" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+            </div>
+            <h3 class="place-name" data-i18n="place_7_name">UNAD</h3>
+            <p class="place-desc" data-i18n="place_7_desc">
+              Where our dreams, goals, and shared days come together as we grow side by side and support each other.
+            </p>
+          </div>
+
+          <!-- Lugar 8: Health and Life Gym -->
+          <div class="place-card" data-place-index="7">
+            <div class="place-pin-icon">
+              <svg class="sky-heart" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+            </div>
+            <h3 class="place-name" data-i18n="place_8_name">Health and Life Gym</h3>
+            <p class="place-desc" data-i18n="place_8_desc">
+              Our favorite place to train together, motivate each other, and turn every routine into a fun moment by your side.
+            </p>
+          </div>
+
+          <!-- Lugar 9: Corferias (SOFA) -->
+          <div class="place-card" data-place-index="8">
+            <div class="place-pin-icon">
+              <svg class="sky-heart" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+            </div>
+            <h3 class="place-name" data-i18n="place_9_name">Corferias (SOFA)</h3>
+            <p class="place-desc" data-i18n="place_9_desc">
+              A day full of magic, geeky adventures, photos, and unforgettable memories exploring every corner together.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================================
+         10. BANNER DE DESPEDIDA
+         ======================================================================== -->
+    <section id="farewell-section" class="section farewell-section">
+      <div class="container farewell-container">
+        <div class="farewell-photo-frame">
+          <img
+            src="./images/angie-sebas-final.webp"
+            data-fallback="./images/Angie Sebas final.jpg"
+            alt="Angie and Sebastian together"
+            class="farewell-photo"
+          />
+        </div>
+
+        <h2 class="cursive-title farewell-names" data-i18n="farewell_names">Angie &amp; Sebastian</h2>
+        <p class="farewell-quote" data-i18n="farewell_quote">To a lifetime with all my love</p>
+      </div>
+    </section>
+
+    <!-- ========================================================================
+         11. LA ÚLTIMA SORPRESA (CUESTIONARIO INTERACTIVO)
+         ======================================================================== -->
+    <section id="surprise-section" class="section surprise-section">
+      <div class="container surprise-container">
+        <!-- Botón llamativo para desplegar la sorpresa -->
+        <button id="open-surprise-btn" class="surprise-cta-btn" type="button">
+          <span class="surprise-btn-icon">🎁</span>
+          <span data-i18n="surprise_btn">One Last Surprise</span>
+        </button>
+
+        <!-- Contenedor oculto que se despliega suavemente al hacer clic -->
+        <div id="quiz-Collapsible-wrapper" class="quiz-collapsible-wrapper" aria-hidden="true">
+          <div class="quiz-card">
+
+            <!-- Bloque del Formulario del Cuestionario -->
+            <div id="quiz-form-container">
+              <div class="quiz-header">
+                <span class="section-tag" data-i18n="quiz_tag">How well do you remember our story?</span>
+                <h2 class="cursive-title section-title" data-i18n="quiz_title">Our Love Quiz</h2>
+                <p class="quiz-instructions" data-i18n="quiz_instructions">
+                  Answer all questions correctly to unlock your final surprise gift
+                  <svg class="sky-heart" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                </p>
+              </div>
+
+              <form id="love-quiz-form" class="love-quiz-form">
+
+                <!-- Pregunta 1 -->
+                <div class="quiz-question-block" data-question="q1">
+                  <h3 class="quiz-question-title" data-i18n="q1_title">
+                    1. Where was our first kiss?
+                  </h3>
+                  <div class="quiz-options">
+                    <button type="button" class="quiz-option-btn" data-value="wrong1" data-i18n="q1_opt1">
+                      At the park
+                    </button>
+                    <button type="button" class="quiz-option-btn" data-value="correct" data-i18n="q1_opt2">
+                      In front of Don Cretino's house
+                    </button>
+                    <button type="button" class="quiz-option-btn" data-value="wrong2" data-i18n="q1_opt3">
+                      At the movie theater
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Pregunta 2 -->
+                <div class="quiz-question-block" data-question="q2">
+                  <h3 class="quiz-question-title" data-i18n="q2_title">
+                    2. Who said "I love you" first?
+                  </h3>
+                  <div class="quiz-options">
+                    <button type="button" class="quiz-option-btn" data-value="correct" data-i18n="q2_opt1">
+                      Me (Sebastian)
+                    </button>
+                    <button type="button" class="quiz-option-btn" data-value="wrong1" data-i18n="q2_opt2">
+                      You (Angie)
+                    </button>
+                    <button type="button" class="quiz-option-btn" data-value="wrong2" data-i18n="q2_opt3">
+                      At the exact same time
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Pregunta 3 -->
+                <div class="quiz-question-block" data-question="q3">
+                  <h3 class="quiz-question-title" data-i18n="q3_title">
+                    3. When did we know this was serious?
+                  </h3>
+                  <div class="quiz-options">
+                    <button type="button" class="quiz-option-btn" data-value="wrong1" data-i18n="q3_opt1">
+                      On our first trip
+                    </button>
+                    <button type="button" class="quiz-option-btn" data-value="wrong2" data-i18n="q3_opt2">
+                      When we went to the waterfall
+                    </button>
+                    <button type="button" class="quiz-option-btn" data-value="correct" data-i18n="q3_opt3">
+                      From the very first moment
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Pregunta 4 (Romántica adicional 1 - Respuesta correcta: September 11, 2025) -->
+                <div class="quiz-question-block" data-question="q4">
+                  <h3 class="quiz-question-title" data-i18n="q4_title">
+                    4. On what magical date did our love story officially begin?
+                  </h3>
+                  <div class="quiz-options">
+                    <button type="button" class="quiz-option-btn" data-value="wrong1" data-i18n="q4_opt1">
+                      February 14, 2025
+                    </button>
+                    <button type="button" class="quiz-option-btn" data-value="correct" data-i18n="q4_opt2">
+                      September 11, 2025
+                    </button>
+                    <button type="button" class="quiz-option-btn" data-value="wrong2" data-i18n="q4_opt3">
+                      December 24, 2025
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Pregunta 5 (Romántica adicional 2 - Respuesta correcta: For a whole lifetime together) -->
+                <div class="quiz-question-block" data-question="q5">
+                  <h3 class="quiz-question-title" data-i18n="q5_title">
+                    5. How long do I want to keep creating memories and adventures with you?
+                  </h3>
+                  <div class="quiz-options">
+                    <button type="button" class="quiz-option-btn" data-value="wrong1" data-i18n="q5_opt1">
+                      Just for this year
+                    </button>
+                    <button type="button" class="quiz-option-btn" data-value="wrong2" data-i18n="q5_opt2">
+                      Until our next waterfall trip
+                    </button>
+                    <button type="button" class="quiz-option-btn" data-value="correct" data-i18n="q5_opt3">
+                      For a whole lifetime together
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Mensaje de retroalimentación si se equivoca o faltan respuestas -->
+                <div id="quiz-error-msg" class="quiz-feedback-error" hidden></div>
+
+                <!-- Botón para enviar respuestas -->
+                <div class="quiz-submit-wrapper">
+                  <button type="submit" class="quiz-submit-btn" data-i18n="quiz_submit_btn">
+                    Check my answers
+                    <svg class="sky-heart" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            <!-- Tarjeta Dorada de Felicitación (Se muestra al acertar todas las preguntas) -->
+            <div id="golden-prize-card" class="golden-prize-card" hidden>
+              <div class="golden-sparkles" aria-hidden="true">✨ 👑 ✨</div>
+              <span class="golden-badge" data-i18n="prize_badge">CONGRATULATIONS MY LOVE! 5/5 CORRECT ANSWERS</span>
+              <h3 class="cursive-title golden-title" data-i18n="prize_title">
+                Good for a surprise date together!
+              </h3>
+              <p class="golden-desc" data-i18n="prize_desc">
+                You proved you know every single detail of our story. Get ready and dress up even prettier, because this golden voucher is redeemable for an unforgettable surprise date planned by me.
+              </p>
+              <div class="golden-voucher-footer">
+                <span data-i18n="prize_valid">
+                  Valid for: Angie
+                  <svg class="sky-heart" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                </span>
+                <span data-i18n="prize_from">Granted by: Sebastian</span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Pie de página delicado -->
+  <footer class="site-footer">
+    <p data-i18n="footer_text">
+      Made with all my love for Angie • Happy 14 Months
+      <svg class="sky-heart" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+    </p>
+  </footer>
+
+  <!-- ==========================================================================
+       LEAFLET.JS SCRIPT (POR CDN) Y SCRIPT PRINCIPAL DE LA SPA
+       ========================================================================== -->
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin=""
+  ></script>
+  <script src="script.js"></script>
+</body>
+</html>
